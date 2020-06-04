@@ -1,4 +1,3 @@
-import sys
 from room import Room
 from player import Player
 from item import Item
@@ -27,7 +26,6 @@ chamber! Sadly, it has already been completely emptied by
 earlier adventurers. The only exit is to the south."""),
 }
 
-
 # Link rooms together
 
 room['outside'].n_to = room['foyer']
@@ -47,10 +45,10 @@ items = {
     'hat': Item('hat', 'a fancy straw hat')
 }
 
-room['outside'].items.append(items['pen'])
-room['foyer'].items.append(items['notebook'])
-room['overlook'].items.append(items['treasure'])
-room['overlook'].items.append(items['hat'])
+room['outside']._add_item(items['pen'])
+room['foyer']._add_item(items['notebook'])
+room['overlook']._add_item(items['treasure'])
+room['overlook']._add_item(items['hat'])
 
 
 # avalible commands:
@@ -58,7 +56,9 @@ command = {
     'moves': ['n', 's', 'e', 'w'],
     'quit': ['q', 'quit', 'exit'],
     'options': ['o', 'help'],
-    'actions': ['grab', 'drop']
+    'actions': ['take', 'drop'],
+    'inventory': ['i'],
+    'checkitems': ['look', 'around']
 }
 
 
@@ -69,12 +69,12 @@ def _run_game():
     running = True  # let's us know if the game is running
 
     # takes in user name first
-    user_input = input('Greetings adventurer! What is your name?\n>> ')
+    user_input = input('Greetings adventurer! What is your name?\n\n>> ')
 
     # Make a new player object that is currently in the 'outside' room.
     player1 = Player(user_input, room['outside'])  # todo, verify string??
     print(
-        f'Welcome {player1.name}!\nGood luck finding the treasure!\nMove with [n] [s] [e] [w]')
+        f"Welcome {player1.name}!\nOh the great outdoors.\nWhy don't you have a [look around]?\nGood luck finding the treasure!\nMove with [n] [s] [e] [w]")
     # game logic
     # Write a loop that:
     while (running is not False):
@@ -84,19 +84,39 @@ def _run_game():
 
         # * Waits for user input and decides what to do.
         user_input = input(
-            'What would like to do next? [o] for options.\n >> ')
+            '\nWhat would like to do next? [o] for options.\n\n>> ').split(' ')
+        user_input_len = len(user_input)
 
-        if user_input in command['options']:
-            player1._print_options()
+        # user inserts single command from options
+        if user_input_len is 1:
+            action = user_input[0]
 
-        # If the user enters a cardinal direction, attmpet to move
-        if user_input in command['moves']:
-            player1._move(user_input)
+            if action in command['options']:
+                player1._print_options()
 
-        # If the user enters "q", quit the game.
-        if user_input in command['quit']:
-            running = False
-            print('You have quit the game. Goodbye!')
+            # If the user enters a cardinal direction, attmpet to move
+            if action in command['moves']:
+                player1._move(action)
+
+            # If the user enters "q", quit the game.
+            if action in command['quit']:
+                running = False
+                print('You have quit the game. Goodbye!')
+
+            # if user wants to see what's in their inventory
+            if action in command['inventory']:
+                player1._show_inventory()
+
+        # user enters complex command
+        if user_input_len is 2:
+            action, item = user_input[0], user_input[1]
+            if action in command['actions']:
+                if action == 'take':
+                    player1._take(item)
+                if action == 'drop':
+                    player1._drop(item)
+            if action == 'look' and item == 'around':
+                player1._look_for_items()
 
 
 if __name__ == "__main__":
